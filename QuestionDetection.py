@@ -1,4 +1,5 @@
 from properties import *
+
 import pathlib 
 import datetime
 import torch
@@ -42,9 +43,9 @@ class QuestionDetection():
 
             return x
 
-        def train(self):
-            super().train()
-            self.__bert.eval()
+        # def train(self):
+        #     super().train()
+        #     self.__bert.eval()
 
         def save(self, path, short = True):
             if short:
@@ -65,8 +66,9 @@ class QuestionDetection():
 
     #########################################################################
 
-    def __init__(self, path = None, short = False) -> None:
-        self.__module = self.__Module(path, short)
+    def __init__(self, device, path = None, short = False) -> None:
+        self.__device = device
+        self.__module = self.__Module(path, short).to(device)
         self.__max_seq_len = properties.bert.token_max_seq_len
         self.__tokenizer = BertTokenizerFast.from_pretrained(properties.bert.version)
 
@@ -83,24 +85,33 @@ class QuestionDetection():
 
         train_loader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size = train_batch_size)
         valid_loader = torch.utils.data.DataLoader(dataset = valid_dataset, batch_size = valid_batch_size)
-        optimizer = torch.optim.ADAM(self.__module.parameters(), lr = learning_rate)
+        optimizer = torch.optim.Adam(self.__module.parameters(), lr = learning_rate)
 
         correctness_rate = []
         for epoch in range(epochs):
             for x, y in train_loader:
                 optimizer.zero_grad()
-                _y = torch.zeros(2)
-                _y[y] = 1
-                yhat = self.__module(self.__sentToIds(x))
+
+                x_ids, x_mask = self.__sentToIds(x)
+                _y = torch.zeros(len(y), 2).to(self.__device)
+                for i in range(len(y)):
+                    _y[i][y[i]] = 1
+
+                yhat = self.__module(x_ids, x_mask)
                 loss = criterion(_y, yhat)
                 loss.backward()
                 optimizer.step()
+            print("Trained: ", 100 * epoch / epochs, "%", end="\r")
 
             correct = 0
             for x, y in valid_loader:
-                yhat = torch.max(self.__module(self.__sentToIds(x)), 1)
-                correct += (y == yhat).sum().item()
+                x_ids, x_mask = self.__sentToIds(x)
+                _, yhat = torch.max(self.__module(x_ids, x_mask), 1)
+                yhat.to(self.__device)
+                y = torch.tensor(y).to(self.__device)
+                correct += (y == yhat).sum().cpu().item()
             correctness_rate.append(100 * (correct / len(valid_dataset)))
+            print("Validated: ", 100 * epoch / epochs, "%", end="\r")
 
         self.__module.eval()
         self.saveModuleToFile()
@@ -136,7 +147,7 @@ class QuestionDetection():
             return_token_type_ids=False 
         )
 
-        return torch.tensor(tokens['input_ids']), torch.tensor(tokens['attention_mask'])
+        return torch.tensor(tokens['input_ids']).to(self.__device), torch.tensor(tokens['attention_mask']).to(self.__device)
 
 
 # debuging
@@ -146,5 +157,4 @@ class QuestionDetection():
 # q.loadModuleFromFile()
 # q.loadModuleFromFile("modules/QuestionDetection/versions/23-02-26-13-22-39.pt", short = True)
 # q.isQuestion(["A B C D ?"])
-
-# trainin
+# print(torch.cuda.is_available())
