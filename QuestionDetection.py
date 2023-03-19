@@ -15,7 +15,7 @@ class QuestionDetection():
             def __init__(self) -> None:
                 super().__init__()
 
-                self.__drop = nn.Dropout(properties.dropout_porb)
+                self.__drop = nn.Dropout(properties.dropout_prob)
                 self.__ln = nn.Linear(properties.bert.out_size,2)
                 self.__softmax = nn.Softmax()
 
@@ -28,17 +28,16 @@ class QuestionDetection():
 
         #####################################################################
 
-        def __init__(self, path = None, short = False) -> None:
+        def __init__(self, bert, path = None) -> None:
             super().__init__()
 
-            if (path == None or short == True):
-                self.__downloadBert()
+            self.__bert = bert
             self.__moduleEnd = self.__ModuleEnd()
             if (path != None):
-                self.load(path, short)
+                self.load(path)
 
-        def forward(self, sent_ids, mask):
-            x = self.__bert(input_ids=sent_ids, attention_mask=mask)[1]
+        def forward(self, sentences):
+            x = self.__bert(sentences)[1]
             x = self.__moduleEnd(x)
 
             return x
@@ -47,38 +46,21 @@ class QuestionDetection():
         #     super().train()
         #     self.__bert.eval()
 
-        def save(self, path, short = True):
-            if short:
-                torch.save(self.__moduleEnd.state_dict(), path)
-            else:    
-                torch.save(self.state_dict(), path)
+        def save(self, path):
+            torch.save(self.__moduleEnd.state_dict(), path)
 
-        def load(self, path, short = True):
-            if short:
-                self.__moduleEnd.load_state_dict(torch.load(path))
-            else:
-                self.load_state_dict(torch.load(path))
-
-        def __downloadBert(self):
-            self.__bert = AutoModel.from_pretrained(properties.bert.version)
-            for param in self.__bert.parameters():
-                param.requires_grad = False
+        def load(self, path):
+            self.__moduleEnd.load_state_dict(torch.load(path))
 
     #########################################################################
 
-    def __init__(self, device, path = None, short = False) -> None:
+    def __init__(self, device, bert, path = None) -> None:
         self.__device = device
-        self.__module = self.__Module(path, short).to(device)
-        self.__max_seq_len = properties.bert.token_max_seq_len
-        self.__tokenizer = BertTokenizerFast.from_pretrained(properties.bert.version)
+        self.__module = self.__Module(bert, path).to(device)
 
     def isQuestion(self, sentence):
         self.__module.eval()
-
-        sent_ids, mask = self.__sentToIds(sentence)
-        preds = self.__module.forward(sent_ids, mask)
-
-        return preds
+        return self.__module(sentence)
 
     def train(self, train_dataset, valid_dataset, train_batch_size, valid_batch_size, criterion, learning_rate, epochs):
         self.__module.train()
@@ -92,32 +74,30 @@ class QuestionDetection():
             for x, y in train_loader:
                 optimizer.zero_grad()
 
-                x_ids, x_mask = self.__sentToIds(x)
                 _y = torch.zeros(len(y), 2).to(self.__device)
                 for i in range(len(y)):
                     _y[i][y[i]] = 1
 
-                yhat = self.__module(x_ids, x_mask)
+                yhat = self.__module(x)
                 loss = criterion(_y, yhat)
                 loss.backward()
                 optimizer.step()
-            print("Trained: ", 100 * epoch / epochs, "%", end="\r")
+            print("Trained: ", 100 * (epoch + 1) / epochs, "%", end="\r")
 
             correct = 0
             for x, y in valid_loader:
-                x_ids, x_mask = self.__sentToIds(x)
-                _, yhat = torch.max(self.__module(x_ids, x_mask), 1)
+                _, yhat = torch.max(self.__module(x), 1)
                 yhat.to(self.__device)
                 y = torch.tensor(y).to(self.__device)
-                correct += (y == yhat).sum().cpu().item()
+                correct += (y == yhat).sum().item()
             correctness_rate.append(100 * (correct / len(valid_dataset)))
-            print("Validated: ", 100 * epoch / epochs, "%", end="\r")
+            print("Validated: ", 100 * (epoch + 1) / epochs, "%", end="\r")
 
         self.__module.eval()
         self.saveModuleToFile()
         return correctness_rate
 
-    def saveModuleToFile(self, path = "default", filename = "default", short = True):
+    def saveModuleToFile(self, path = "default", filename = "default"):
         save_to_last_version = (path == "default" and  filename == "default")
 
         if (path == "default"):
@@ -128,26 +108,14 @@ class QuestionDetection():
             dt = datetime.datetime.now()
             filename = dt.strftime("%y-%m-%d-%H-%M-%S") + ".pt"
 
-        self.__module.save(path + filename, short)
+        self.__module.save(path + filename)
         if (save_to_last_version):
-            self.__module.save("modules/QuestionDetection/last.pt", short = False)
+            self.__module.save("modules/QuestionDetection/last.pt")
 
-    def loadModuleFromFile(self, path = "default", short = False):
+    def loadModuleFromFile(self, path = "default"):
         if (path == "default"):
             path = "modules/QuestionDetection/last.pt"
-            short = False
-        self.__module.load(path, short)
-
-    def __sentToIds(self, sentences):
-        tokens = self.__tokenizer.batch_encode_plus(
-            sentences,
-            max_length = self.__max_seq_len,
-            pad_to_max_length=True,
-            truncation=True,
-            return_token_type_ids=False 
-        )
-
-        return torch.tensor(tokens['input_ids']).to(self.__device), torch.tensor(tokens['attention_mask']).to(self.__device)
+        self.__module.load(path)
 
 
 # debuging

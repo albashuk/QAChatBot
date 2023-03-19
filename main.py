@@ -1,13 +1,15 @@
 from properties import *
 from QuestionDetDataset import *
 from QuestionDetection import *
+from BERT import *
 
 import torch.nn as nn
 import matplotlib.pyplot as plt
 import numpy as np
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-QD = QuestionDetection(device)
+bert = BERT(device)
+QD = QuestionDetection(device, bert)
 
 train_dataset, valid_dataset = QuestionDetDataset.getDataset("SQuAD")
 correctness_rate = QD.train(train_dataset, valid_dataset, 100, 5000, nn.CrossEntropyLoss(), properties.learning_rate, properties.epochs)
