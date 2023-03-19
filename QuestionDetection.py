@@ -4,8 +4,6 @@ import pathlib
 import datetime
 import torch
 import torch.nn as nn
-from transformers import AutoModel, BertTokenizerFast
-
 
 class QuestionDetection():
     
