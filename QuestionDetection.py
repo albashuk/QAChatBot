@@ -1,4 +1,5 @@
-from properties import *
+from properties import properties
+from BERT import BERT
 
 import pathlib 
 import datetime
@@ -26,7 +27,7 @@ class QuestionDetection():
 
         #####################################################################
 
-        def __init__(self, bert, path = None) -> None:
+        def __init__(self, bert: BERT, path = None) -> None:
             super().__init__()
 
             self.__bert = bert
@@ -52,13 +53,14 @@ class QuestionDetection():
 
     #########################################################################
 
-    def __init__(self, device, bert, path = None) -> None:
+    def __init__(self, device, bert: BERT, path = None) -> None:
         self.__device = device
         self.__module = self.__Module(bert, path).to(device)
 
-    def isQuestion(self, sentence):
+    def isQuestion(self, sentence) -> bool:
         self.__module.eval()
-        return self.__module(sentence)
+        question_prob = self.__module(sentence)
+        return question_prob[0] <= question_prob[1]
 
     def train(self, train_dataset, valid_dataset, train_batch_size, valid_batch_size, criterion, learning_rate, epochs):
         self.__module.train()
