@@ -21,7 +21,6 @@ class MessageSimilarity:
         bert_cos = self.__cos(bert1, bert2)
         dict_cos = self.__cos(dict1, dict2)
 
-        print(bert_cos, dict_cos)
         return (self.__bert_multiplier * bert_cos + (1 - self.__bert_multiplier) * dict_cos).item() >= self.__threshold
 
     def __msgToVecs(self, msg):
