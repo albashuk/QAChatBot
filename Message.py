@@ -1,6 +1,7 @@
-import telethon
+from __future__ import annotations
 
-from telethon.tl.types import TypePeer
+import telethon
+from telethon.tl.types import TypePeer, PeerUser, PeerChat, PeerChannel
 
 
 class Message:
@@ -9,28 +10,50 @@ class Message:
             self.chat_id = chat_id
             self.message_id = message_id
 
+        def __hash__(self):
+            match self.chat_id:
+                case PeerUser():
+                    return hash((0, self.chat_id.user_id, self.message_id))
+                case PeerChat():
+                    return hash((1, self.chat_id.chat_id, self.message_id))
+                case PeerChannel():
+                    return hash((2, self.chat_id.channel_id, self.message_id))
+
+        def __eq__(self, other: Message.Id):
+            return self.chat_id == other.chat_id and self.message_id == other.message_id
+
     def __init__(self,
                  id: Id,
                  message: str,
+                 from_id: 'TypePeer',
                  reply_id: Id = None,
-                 is_from_moderator: bool = None) -> None:
+                 is_from_moderator: bool = None,
+                 is_question: bool = None) -> None:
         self.id = id
         self.message = message
+        self.from_id = from_id
         self.reply_id = reply_id
-        self.__is_from_moderator = is_from_moderator
+        self.is_from_moderator = is_from_moderator
+        self.is_question = is_question
 
     @classmethod
     def fromTelethonMessage(cls, tMessage: telethon.tl.custom.message.Message):
         reply_id = None \
             if tMessage.reply_to is None \
             else Message.Id(tMessage.peer_id, tMessage.reply_to.reply_to_msg_id)
-        return Message(Message.Id(tMessage.peer_id, tMessage.id), tMessage.message, reply_id)
+        return Message(Message.Id(tMessage.peer_id, tMessage.id), tMessage.message, tMessage.from_id, reply_id)
 
-    def isFromModerator(self) -> bool:
-        if self.__is_from_moderator is not None:
-            return self.__is_from_moderator
-        else:
-            pass
 
+
+
+
+# debuging
+
+# id1 = Message.Id(PeerUser(123), 321)
+# id2 = Message.Id(PeerChat(123), 321)
+# id3 = Message.Id(PeerChannel(123), 321)
+# print(hash(id1))
+# print(hash(id2))
+# print(hash(id3))
 
 

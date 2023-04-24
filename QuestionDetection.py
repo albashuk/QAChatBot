@@ -59,8 +59,8 @@ class QuestionDetection():
 
     def isQuestion(self, sentence) -> bool:
         self.__module.eval()
-        question_prob = self.__module(sentence)
-        return question_prob[0] <= question_prob[1]
+        question_prob = self.__module([sentence])[0]
+        return question_prob[0].item() <= question_prob[1].item()
 
     def train(self, train_dataset, valid_dataset, train_batch_size, valid_batch_size, criterion, learning_rate, epochs):
         self.__module.train()

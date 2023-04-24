@@ -15,6 +15,6 @@ class ChatIter:
                                                  offset_id=start_id,
                                                  reverse=downward))
 
-    async def next(self):
+    async def next(self) -> Message:
         return Message.fromTelethonMessage(await anext(self.__iter))
 
