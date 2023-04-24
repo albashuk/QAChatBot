@@ -44,7 +44,7 @@ class BotCore:
             chat.questions[message.id] = questionSummary
 
             if with_answering:
-                pass
+                pass  # TODO: realize
         else:
             if message.reply_id is not None:
                 reply = chat.questions.get(message.reply_id)
@@ -55,6 +55,8 @@ class BotCore:
 
             for question in chat.questions_queue[user_type]:
                 self.__answerChecking(question, message, self.__messageWeight(user_type))
+
+        # TODO: dictionary updating
 
     def initChatQuestions(self, chat: Chat):
         if not self.__clientApi.hasAccessToChatHistory(chat):
@@ -75,7 +77,7 @@ class BotCore:
 
     @classmethod
     def __answerChecking(cls, question: QuestionSummary, answer: Message, weight: float = 0):
-        pass
+        pass  # TODO: realize
 
     @staticmethod
     def __messageWeight(user_type: str, reply: bool = False) -> float:

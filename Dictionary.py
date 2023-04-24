@@ -15,7 +15,7 @@ class Dictionary:
         self.__dictionary = {w:i for i,w in enumerate(dictionary)}
 
     def autoSet(self, messages):
-        pass
+        pass  # TODO: realize
 
     def set(self, dictionary: set):
         self.__dictionary = {w:i for i,w in enumerate(dictionary)}
