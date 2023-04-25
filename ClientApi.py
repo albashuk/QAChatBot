@@ -24,7 +24,11 @@ class ClientApi:
     async def hasAccessToChatHistory(self, chat: Chat) -> bool:
         return not await self.is_bot()
 
-    async def buildIter(self, chat: Chat, limit: int, start_message_id: int, downward: bool) -> ChatIter | None:
+    async def buildIter(self,
+                        chat: Chat,
+                        limit: int,
+                        start_message_id: int = 0,
+                        downward: bool = False) -> ChatIter | None:
         if not await self.hasAccessToChatHistory(chat):
             self.__log.error(f"Client hasn't access to chat ({chat.id})_ history")
             return None

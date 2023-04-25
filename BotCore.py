@@ -6,6 +6,8 @@ from BERT import BERT
 from Chat import Chat
 from ClientApi import ClientApi
 from Message import Message
+from MessageInterpretation import MessageInterpretation
+from MessageInterpretationService import MessageInterpretationService
 from QuestionDetection import QuestionDetection
 from QuestionSummary import QuestionSummary
 from properties import properties
@@ -19,10 +21,10 @@ class BotCore:
     __device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     __bert = BERT(__device)
     __questionDetection = QuestionDetection(__device, __bert)
+    __messageInterpretationService = MessageInterpretationService(__device, __bert)
 
     # data
     __chats = {}  # TODO: use database
-    __dictionaries = {}  # TODO: use database
 
     def __init__(self, clientApi: ClientApi) -> None:
         self.__clientApi = clientApi
@@ -38,7 +40,10 @@ class BotCore:
             chat.questions_queue[user_type].popleft()
 
         if self.__isQuestion(message):
-            questionSummary = QuestionSummary(message.id, chat.message_count["user"], chat.message_count["moderator"])
+            questionSummary = QuestionSummary(message.id,
+                                              self.__messageInterpretation(message, chat),
+                                              chat.message_count["user"],
+                                              chat.message_count["moderator"])
             chat.questions_queue["user"].append(questionSummary)
             chat.questions_queue["moderator"].append(questionSummary)
             chat.questions[message.id] = questionSummary
@@ -58,26 +63,48 @@ class BotCore:
 
         # TODO: dictionary updating
 
-    def initChatQuestions(self, chat: Chat):
+    async def initChatQuestions(self, chat: Chat):
         if not self.__clientApi.hasAccessToChatHistory(chat):
             self.__log.warning(f"Client hasn't access to chat ({chat.id})_ history")
             return
 
-    @classmethod
-    def __chatFromMessage(cls, message: Message):
-        if cls.__chats.get(message.id.chat_id) is None:
-            cls.__chats[message.id.chat_id] = Chat(message.id.chat_id)
-        return cls.__chats[message.id.chat_id]
+        try:
+            chatIter = await self.__clientApi.buildIter(chat, properties.history_limit)
+            while True:
+                message = await chatIter.next()
+                self.messageProcessing(message, False)
+        except StopAsyncIteration:
+            pass
 
     @classmethod
-    def __isQuestion(cls, message: Message) -> bool:
+    def __chatFromMessage(cls, message: Message):
+        if cls.__chats.get(message.id.chat_id_value()) is None:
+            cls.__chats[message.id.chat_id_value()] = Chat(message.id.chat_id_value())
+        return cls.__chats[message.id.chat_id_value()]
+
+    @classmethod
+    def __isQuestion(cls, message: Message) -> bool:  # TODO: check separate sentences
         if message.is_question is None:
             message.is_question = cls.__questionDetection.isQuestion(message.message)
         return message.is_question
 
     @classmethod
     def __answerChecking(cls, question: QuestionSummary, answer: Message, weight: float = 0):
-        pass  # TODO: realize
+        similarity = cls.__messageInterpretationService.similarity(question.interpretation,
+                                                                   cls.__messageInterpretation(answer),
+                                                                   0.5)  # TODO: config coefficient
+        answer_confidence = similarity * weight  # TODO: improve formula
+        if similarity >= properties.similarity_threshold and answer_confidence >= properties.answer_threshold:
+            if question.answer_id is None or question.answer_confidence < answer_confidence:
+                question.answer_id = answer.id
+                question.answer_confidence = answer_confidence
+
+    @classmethod
+    def __messageInterpretation(cls, message: Message, chat: Chat) -> MessageInterpretation:
+        if message.interpretation is None:
+            message.interpretation = cls.__messageInterpretationService.toInterpretation(message.message,
+                                                                                         chat.dictionary)
+        return message.interpretation
 
     @staticmethod
     def __messageWeight(user_type: str, reply: bool = False) -> float:

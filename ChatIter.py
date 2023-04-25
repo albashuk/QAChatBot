@@ -8,8 +8,8 @@ class ChatIter:
                 client: TelegramClient,
                 entity: 'hints.EntityLike',
                 limit: int,
-                start_id: int,
-                downward: bool) -> None:
+                start_id: int = 0,
+                downward: bool = False) -> None:
         self.__iter = aiter(client.iter_messages(entity=entity,
                                                  limit=limit,
                                                  offset_id=start_id,

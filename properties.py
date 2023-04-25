@@ -13,3 +13,8 @@ class properties:
 
     user_weight = {"user": 0.5, "moderator": 1.0}
     reply_weight = 2.0
+
+    similarity_threshold = 0.7
+    answer_threshold = 0.8
+
+    history_limit = 10000
