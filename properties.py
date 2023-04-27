@@ -8,6 +8,11 @@ class properties:
     learning_rate = 0.1
     epochs = 10
 
+    class dictionary:
+        default_size = 100
+        default_clean_threshold = 10
+        default_update_threshold = 0.0
+
     max_answers = {"user": 50, "moderator": 10}
     max_replies = 10
 

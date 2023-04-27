@@ -5,6 +5,7 @@ import string
 import torch
 
 from MessageInterpretation import MessageInterpretation
+from parser import parseOnWords
 
 
 class MessageInterpretationService:
@@ -39,7 +40,7 @@ class MessageInterpretationService:
 
     @staticmethod
     def __parseMsgOnWords(msg: str):
-        return {word.strip(string.punctuation) for word in msg.split()}
+        return set(parseOnWords(msg))
 
 
 
