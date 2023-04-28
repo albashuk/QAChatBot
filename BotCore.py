@@ -5,11 +5,13 @@ import torch
 from BERT import BERT
 from Chat import Chat
 from ClientApi import ClientApi
+from Dictionary import Dictionary
 from Message import Message
 from MessageInterpretation import MessageInterpretation
 from MessageInterpretationService import MessageInterpretationService
 from QuestionDetection import QuestionDetection
 from QuestionSummary import QuestionSummary
+from parser import parseOnWords
 from properties import properties
 
 
@@ -61,9 +63,9 @@ class BotCore:
             for question in chat.questions_queue[user_type]:
                 self.__answerChecking(question, message, self.__messageWeight(user_type))
 
-        # TODO: dictionary updating
+        self.__updateDictionary(message, chat)
 
-    async def initChatQuestions(self, chat: Chat):
+    async def initChat(self, chat: Chat):
         if not self.__clientApi.hasAccessToChatHistory(chat):
             self.__log.warning(f"Client hasn't access to chat ({chat.id})_ history")
             return
@@ -106,6 +108,17 @@ class BotCore:
                                                                                          chat.dictionary)
         return message.interpretation
 
+    @classmethod
+    def __updateDictionary(cls, message: Message, chat: Chat):
+        if chat.dictionary is None:
+            chat.dictionary = Dictionary(None, True, True)
+        words = parseOnWords(message.message)
+        for word in words:
+            chat.dictionary.increaseWordCurrency(word)
+        if (chat.message_count["user"] + chat.message_count["moderator"]) % 1000 == 0:
+            chat.dictionary.cleanCurrency()
+            chat.dictionary.update()
+
     @staticmethod
     def __messageWeight(user_type: str, reply: bool = False) -> float:
         if reply:
@@ -116,7 +129,7 @@ class BotCore:
 
 
 
-# debuging
+# debugging
 
 # botCore = BotCore(None)
 # message = Message(None, "I'm writing a letter to you", None)
