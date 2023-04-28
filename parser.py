@@ -23,6 +23,7 @@ def parseOnWords(text: str) -> list:
 
 
 # debugging
+
 # text = "Use this link https://stackoverflow.com/questions/42602004/what-does-b-for-a-in-x-for-b-in-a-if-not-b-k-mean"
 # print(parseOnWords(text))
 # print(text.split())

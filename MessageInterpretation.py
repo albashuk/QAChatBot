@@ -1,4 +1,6 @@
 class MessageInterpretation:
-    def __init__(self, bert_v, dict_v) -> None:
-        self.bert_v = bert_v
-        self.dict_v = dict_v  # TODO: add dict version tracker
+    def __init__(self, bert_vec, dict_vec, dict_ver) -> None:
+        self.bert_vec = bert_vec
+        self.dict_vec = dict_vec
+        self.dict_ver = dict_ver
+

@@ -43,7 +43,7 @@ class BotCore:
 
         if self.__isQuestion(message):
             questionSummary = QuestionSummary(message.id,
-                                              self.__messageInterpretation(message, chat),
+                                              message.message,
                                               chat.message_count["user"],
                                               chat.message_count["moderator"])
             chat.questions_queue["user"].append(questionSummary)
@@ -63,7 +63,7 @@ class BotCore:
             for question in chat.questions_queue[user_type]:
                 self.__answerChecking(question, message, self.__messageWeight(user_type))
 
-        self.__updateDictionary(message, chat)
+        self.__updateDictionary(message)
 
     async def initChat(self, chat: Chat):
         if not self.__clientApi.hasAccessToChatHistory(chat):
@@ -79,9 +79,9 @@ class BotCore:
             pass
 
     @classmethod
-    def __chatFromMessage(cls, message: Message):
+    def __chatFromMessage(cls, message: Message | QuestionSummary):
         if cls.__chats.get(message.id.chat_id_value()) is None:
-            cls.__chats[message.id.chat_id_value()] = Chat(message.id.chat_id_value())
+            cls.__chats[message.id.chat_id_value()] = Chat(message.id.chat_id, Dictionary(None, True, True))
         return cls.__chats[message.id.chat_id_value()]
 
     @classmethod
@@ -92,7 +92,7 @@ class BotCore:
 
     @classmethod
     def __answerChecking(cls, question: QuestionSummary, answer: Message, weight: float = 0):
-        similarity = cls.__messageInterpretationService.similarity(question.interpretation,
+        similarity = cls.__messageInterpretationService.similarity(cls.__messageInterpretation(question),
                                                                    cls.__messageInterpretation(answer),
                                                                    0.5)  # TODO: config coefficient
         answer_confidence = similarity * weight  # TODO: improve formula
@@ -102,16 +102,16 @@ class BotCore:
                 question.answer_confidence = answer_confidence
 
     @classmethod
-    def __messageInterpretation(cls, message: Message, chat: Chat) -> MessageInterpretation:
-        if message.interpretation is None:
+    def __messageInterpretation(cls, message: Message | QuestionSummary) -> MessageInterpretation:
+        chat = cls.__chatFromMessage(message)
+        if message.interpretation is None or message.interpretation.dict_ver != chat.dictionary.getVersion():
             message.interpretation = cls.__messageInterpretationService.toInterpretation(message.message,
                                                                                          chat.dictionary)
         return message.interpretation
 
     @classmethod
-    def __updateDictionary(cls, message: Message, chat: Chat):
-        if chat.dictionary is None:
-            chat.dictionary = Dictionary(None, True, True)
+    def __updateDictionary(cls, message: Message):
+        chat = cls.__chatFromMessage(message)
         words = parseOnWords(message.message)
         for word in words:
             chat.dictionary.increaseWordCurrency(word)

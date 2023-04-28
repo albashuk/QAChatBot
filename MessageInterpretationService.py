@@ -19,24 +19,24 @@ class MessageInterpretationService:
                    interp1: MessageInterpretation,
                    interp2: MessageInterpretation,
                    bert_multiplier: float) -> float:
-        bert_cos = self.__cos(interp1.bert_v, interp2.bert_v)
-        dict_cos = self.__cos(interp1.dict_v, interp2.dict_v)
+        bert_cos = self.__cos(interp1.bert_vec, interp2.bert_vec)
+        dict_cos = self.__cos(interp1.dict_vec, interp2.dict_vec)
 
         return (bert_multiplier * bert_cos + (1 - bert_multiplier) * dict_cos).item()
 
     def toInterpretation(self, message: str, dictionary: Dictionary) -> MessageInterpretation:
-        bert_v = self.__bert([message])[1]
-        dict_v = self.__dictionaryUse(message, dictionary)
+        bert_vec = self.__bert([message])[1]
+        dict_vec = self.__dictionaryUse(message, dictionary)
 
-        return MessageInterpretation(bert_v, dict_v)
+        return MessageInterpretation(bert_vec, dict_vec, dictionary.getVersion())
         
     def __dictionaryUse(self, msg: str, dictionary: Dictionary):
         words = self.__parseMsgOnWords(msg)
-        dict_v = [0.0] * dictionary.size()
+        dict_vec = [0.0] * dictionary.size()
         for word in words:
             if dictionary.index(word) is not None:
-                dict_v[dictionary.index(word)] += 1
-        return torch.tensor([dict_v]).to(self.__device)
+                dict_vec[dictionary.index(word)] += 1
+        return torch.tensor([dict_vec]).to(self.__device)
 
     @staticmethod
     def __parseMsgOnWords(msg: str):
