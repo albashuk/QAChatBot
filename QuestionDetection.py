@@ -118,7 +118,7 @@ class QuestionDetection():
         self.__module.load(path)
 
 
-# debuging
+# debugging
 
 # q = QuestionDetection()
 # q.saveModuleToFile()

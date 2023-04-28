@@ -60,7 +60,7 @@ class Message:
 
 
 
-# debuging
+# debugging
 
 # id1 = Message.Id(PeerUser(123), 321)
 # id2 = Message.Id(PeerChat(123), 321)

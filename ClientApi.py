@@ -46,7 +46,7 @@ class ClientApi:
 
 
 
-# debuging
+# debugging
 
 # async def debug():
 #     from TelegramConfig import api_id, api_hash

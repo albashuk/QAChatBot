@@ -45,7 +45,7 @@ class MessageInterpretationService:
 
 
 
-# debuging
+# debugging
 
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # bert = BERT(device)
