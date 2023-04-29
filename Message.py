@@ -1,37 +1,23 @@
 from __future__ import annotations
 
 import telethon
-from telethon.tl.types import TypePeer, PeerUser, PeerChat, PeerChannel
+from telethon.tl.types import TypePeer
 
+from Chat import Chat
 from MessageInterpretation import MessageInterpretation
 
 
 class Message:
     class Id:
-        def __init__(self, chat_id: 'TypePeer', message_id) -> None:
+        def __init__(self, chat_id: Chat.Id, message_id: int) -> None:
             self.chat_id = chat_id
             self.message_id = message_id
 
         def __hash__(self):
-            match self.chat_id:
-                case PeerUser():
-                    return hash((0, self.chat_id.user_id, self.message_id))
-                case PeerChat():
-                    return hash((1, self.chat_id.chat_id, self.message_id))
-                case PeerChannel():
-                    return hash((2, self.chat_id.channel_id, self.message_id))
+            return hash((self.chat_id, self.message_id))
 
         def __eq__(self, other: Message.Id):
             return self.chat_id == other.chat_id and self.message_id == other.message_id
-
-        def chat_id_value(self) -> int:
-            match self.chat_id:
-                case PeerUser():
-                    return self.chat_id.user_id
-                case PeerChat():
-                    return self.chat_id.chat_id
-                case PeerChannel():
-                    return self.chat_id.channel_id
 
     def __init__(self,
                  id: Id,

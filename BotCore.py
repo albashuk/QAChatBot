@@ -35,23 +35,37 @@ class BotCore:
         chat = self.__chatFromMessage(message)
         user_type = "moderator" if self.__clientApi.isFromModerator(message) else "user"
         chat.message_count[user_type] += 1
-        while len(chat.questions_queue[user_type]) > 0 and \
-                chat.questions_queue[user_type][0].messages_before_question[user_type] \
-                + properties.max_answers[user_type] \
-                < chat.message_count[user_type]:
+        while len(chat.questions_queue[user_type]) > 0 \
+                and not chat.questions_queue[user_type][0].waitingForAnswer(chat.message_count[user_type], user_type):
             chat.questions_queue[user_type].popleft()
 
+        self.__updateDictionary(message)
+
         if self.__isQuestion(message):
-            questionSummary = QuestionSummary(message.id,
+            question = QuestionSummary(message.id,
                                               message.message,
                                               chat.message_count["user"],
                                               chat.message_count["moderator"])
-            chat.questions_queue["user"].append(questionSummary)
-            chat.questions_queue["moderator"].append(questionSummary)
-            chat.questions[message.id] = questionSummary
+            chat.questions_queue["user"].append(question)
+            chat.questions_queue["moderator"].append(question)
+            chat.questions[message.id] = question
 
             if with_answering:
-                pass  # TODO: realize
+                answers = []
+                for oldQuestionId in list(chat.questions):
+                    oldQuestion = chat.questions[oldQuestionId]
+                    if oldQuestion.answer_id is not None:
+                        similarity = self.__questionSimilarity(question, oldQuestion)
+                        if similarity >= properties.question_similarity_threshold:
+                            answers.append((similarity * oldQuestion.answer_confidence, oldQuestion.answer_id))
+                    else:
+                        if not oldQuestion.waitingForReply() \
+                                and not oldQuestion.waitingForAnswer(chat.message_count["user"], "user") \
+                                and not oldQuestion.waitingForAnswer(chat.message_count["moderator"], "moderator"):
+                            chat.questions.pop(oldQuestionId)
+
+                top_answers = sorted(answers)[:properties.top_answers_max_size]
+                return self.__clientApi.buildRespond(top_answers, chat.id) if len(top_answers) == 0 else None
         else:
             if message.reply_id is not None:
                 reply = chat.questions.get(message.reply_id)
@@ -63,15 +77,18 @@ class BotCore:
             for question in chat.questions_queue[user_type]:
                 self.__answerChecking(question, message, self.__messageWeight(user_type))
 
-        self.__updateDictionary(message)
+    async def initChat(self, chat_id: Chat.Id):
+        if self.__chats.get(chat_id) is not None:
+            self.__log.warning(f"Chat ({chat_id.value()}) is already init")
+            return
+        self.__chats[chat_id] = Chat(chat_id, Dictionary(None, True, True))
 
-    async def initChat(self, chat: Chat):
-        if not self.__clientApi.hasAccessToChatHistory(chat):
-            self.__log.warning(f"Client hasn't access to chat ({chat.id})_ history")
+        if not self.__clientApi.hasAccessToChatHistory(chat_id):
+            self.__log.warning(f"Client hasn't access to chat ({chat_id.value()}) history")
             return
 
         try:
-            chatIter = await self.__clientApi.buildIter(chat, properties.history_limit)
+            chatIter = await self.__clientApi.buildIter(chat_id, properties.history_limit)
             while True:
                 message = await chatIter.next()
                 self.messageProcessing(message, False)
@@ -80,9 +97,9 @@ class BotCore:
 
     @classmethod
     def __chatFromMessage(cls, message: Message | QuestionSummary):
-        if cls.__chats.get(message.id.chat_id_value()) is None:
-            cls.__chats[message.id.chat_id_value()] = Chat(message.id.chat_id, Dictionary(None, True, True))
-        return cls.__chats[message.id.chat_id_value()]
+        if cls.__chats.get(message.id.chat_id) is None:
+            cls.__log.error(f"Chat ({chat_id.value()}) is not init!")
+        return cls.__chats[message.id.chat_id]
 
     @classmethod
     def __isQuestion(cls, message: Message) -> bool:  # TODO: check separate sentences
@@ -91,12 +108,18 @@ class BotCore:
         return message.is_question
 
     @classmethod
+    def __questionSimilarity(cls, question1: QuestionSummary, question2: QuestionSummary):
+        return cls.__messageInterpretationService.similarity(cls.__messageInterpretation(question1),
+                                                             cls.__messageInterpretation(question2),
+                                                             0.7)  # TODO: config coefficient
+
+    @classmethod
     def __answerChecking(cls, question: QuestionSummary, answer: Message, weight: float = 0):
         similarity = cls.__messageInterpretationService.similarity(cls.__messageInterpretation(question),
                                                                    cls.__messageInterpretation(answer),
-                                                                   0.5)  # TODO: config coefficient
+                                                                   0.4)  # TODO: config coefficient
         answer_confidence = similarity * weight  # TODO: improve formula
-        if similarity >= properties.similarity_threshold and answer_confidence >= properties.answer_threshold:
+        if similarity >= properties.qa_similarity_threshold and answer_confidence >= properties.answer_threshold:
             if question.answer_id is None or question.answer_confidence < answer_confidence:
                 question.answer_id = answer.id
                 question.answer_confidence = answer_confidence

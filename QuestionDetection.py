@@ -126,3 +126,20 @@ class QuestionDetection():
 # q.loadModuleFromFile("modules/QuestionDetection/versions/23-02-26-13-22-39.pt", short = True)
 # q.isQuestion(["A B C D ?"])
 # print(torch.cuda.is_available())
+
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# bert = BERT(device)
+# QD = QuestionDetection(device, bert)
+#
+# from QuestionDetDataset import QuestionDetDataset
+# train_dataset, valid_dataset = QuestionDetDataset.getDataset("SQuAD")
+# correctness_rate = QD.train(train_dataset, valid_dataset, 100, 5000, nn.CrossEntropyLoss(), properties.learning_rate, properties.epochs)
+#
+# import numpy as np
+# num = len(correctness_rate)
+# x = np.arange(1,num+1)
+# y = np.array(correctness_rate)
+#
+# import matplotlib.pyplot as plt
+# plt.plot(x, y)
+# plt.show()

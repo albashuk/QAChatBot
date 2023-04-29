@@ -10,7 +10,7 @@ class properties:
 
     class dictionary:
         default_size = 100
-        default_clean_threshold = 10
+        default_clean_threshold = 5
         default_update_threshold = 0.0
         default_common_words_weight = 10
 
@@ -20,7 +20,10 @@ class properties:
     user_weight = {"user": 0.5, "moderator": 1.0}
     reply_weight = 2.0
 
-    similarity_threshold = 0.7
+    question_similarity_threshold = 0.8
+    qa_similarity_threshold = 0.7
     answer_threshold = 0.8
+
+    top_answers_max_size = 5
 
     history_limit = 10000

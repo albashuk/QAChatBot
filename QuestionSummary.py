@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from Message import Message
 from MessageInterpretation import MessageInterpretation
+from properties import properties
 
 
 class QuestionSummary:  # TODO?: rework as Message subclass or save messages separately
@@ -22,3 +23,9 @@ class QuestionSummary:  # TODO?: rework as Message subclass or save messages sep
         self.answer_id = answer_id
         self.answer_confidence = answer_confidence
         self.interpretation = interpretation
+
+    def waitingForAnswer(self, messages: int, user_type: "str") -> bool:
+        return messages - self.messages_before_question[user_type] <= properties.max_answers[user_type]
+
+    def waitingForReply(self) -> bool:
+        return self.replies <= properties.max_replies

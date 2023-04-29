@@ -21,30 +21,37 @@ class ClientApi:
             self.__is_bot = await self.__client.is_bot()
         return self.__is_bot
 
-    async def hasAccessToChatHistory(self, chat: Chat) -> bool:
+    async def hasAccessToChatHistory(self, chat_id: Chat.Id) -> bool:
         return not await self.is_bot()
 
     async def buildIter(self,
-                        chat: Chat,
+                        chat_id: Chat.Id,
                         limit: int,
                         start_message_id: int = 0,
                         downward: bool = False) -> ChatIter | None:
-        if not await self.hasAccessToChatHistory(chat):
-            self.__log.error(f"Client hasn't access to chat ({chat.id})_ history")
+        if not await self.hasAccessToChatHistory(chat_id):
+            self.__log.error(f"Client hasn't access to chat ({chat_id.value()})_ history")
             return None
         else:
-            return ChatIter(self.__client, chat.id, limit, start_message_id, downward)
+            return ChatIter(self.__client, chat_id.peer_id, limit, start_message_id, downward)
 
     async def isFromModerator(self, message: Message) -> bool:
         if message.is_from_moderator is None:
-            participant = await self.__client(GetParticipantRequest(channel=message.id.chat_id.channel_id,
+            participant = await self.__client(GetParticipantRequest(channel=message.id.chat_id.value(),
                                                                     participant=message.from_id))
             message.is_from_moderator = isinstance(participant.participant,
                                                    ChannelParticipantAdmin | ChannelParticipantCreator)
         return message.is_from_moderator
 
-
-
+    @staticmethod
+    def buildRespond(answers, chat_id: Chat.Id) -> str:
+        respond = "Hello!\n\n" \
+                  + "I'll try to help you with you question. This could be a related answers:\n"
+        for i, answer in answers:
+            respond += f"{i + 1}) t.me/c/{chat_id.value()}/{answer[1]} - confidence: {answer[0]}\n"
+        respond += "\n"
+        respond += "Do I help you to resolve your question?"
+        return respond
 
 # debugging
 

@@ -83,7 +83,7 @@ class Dictionary:
                     self.__dictionary = {w[1]: i for i, w in enumerate(words_usage[:max_size])}
                     self.__dictionary_version += 1
 
-    def configCommonWordsUsage(self, path="long-text.txt"):  # TODO: test
+    def configCommonWordsUsage(self, path="long-text.txt"):
         self.__dictionary_version += 1
         self.__common_words_usage = {}
 
