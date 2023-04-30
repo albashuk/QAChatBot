@@ -19,7 +19,8 @@ def parseOnWords(text: str) -> list:
     return [__removeVerbEnding(word.strip(string.punctuation))
             for word_ in text.split()
             if not __isLink(word_)
-            for word in word_.split("/")]  # TODO: remove special characters
+            for word in word_.split("/")
+            if len(__removeVerbEnding(word.strip(string.punctuation))) > 0]  # TODO: remove special characters
 
 
 # debugging

@@ -31,9 +31,9 @@ class BotCore:
     def __init__(self, clientApi: ClientApi) -> None:
         self.__clientApi = clientApi
 
-    def messageProcessing(self, message: Message, with_answering: bool = True):
-        chat = self.__chatFromMessage(message)
-        user_type = "moderator" if self.__clientApi.isFromModerator(message) else "user"
+    async def messageProcessing(self, message: Message, with_answering: bool = True):
+        chat = self.__chatFromMessage(message.id)
+        user_type = "moderator" if await self.__clientApi.isFromModerator(message) else "user"
         chat.message_count[user_type] += 1
         while len(chat.questions_queue[user_type]) > 0 \
                 and not chat.questions_queue[user_type][0].waitingForAnswer(chat.message_count[user_type], user_type):
@@ -52,7 +52,7 @@ class BotCore:
 
             if with_answering:
                 answers = []
-                for oldQuestionId in list(chat.questions):
+                for oldQuestionId in list(chat.questions)[:-1]:
                     oldQuestion = chat.questions[oldQuestionId]
                     if oldQuestion.answer_id is not None:
                         similarity = self.__questionSimilarity(question, oldQuestion)
@@ -65,7 +65,7 @@ class BotCore:
                             chat.questions.pop(oldQuestionId)
 
                 top_answers = sorted(answers)[:properties.top_answers_max_size]
-                return self.__clientApi.buildRespond(top_answers, chat.id) if len(top_answers) == 0 else None
+                return self.__clientApi.buildRespond(top_answers) if len(top_answers) != 0 else None
         else:
             if message.reply_id is not None:
                 reply = chat.questions.get(message.reply_id)
@@ -76,6 +76,12 @@ class BotCore:
 
             for question in chat.questions_queue[user_type]:
                 self.__answerChecking(question, message, self.__messageWeight(user_type))
+
+    async def acceptGeneratedAnswer(self, answer_id: Message.Id, question_id: Message.Id):
+        chat = self.__chatFromMessage(answer_id)
+        question = chat.questions[question_id]
+        question.answer_id = answer_id
+        question.answer_confidence = 1
 
     async def initChat(self, chat_id: Chat.Id):
         if self.__chats.get(chat_id) is not None:
@@ -91,15 +97,15 @@ class BotCore:
             chatIter = await self.__clientApi.buildIter(chat_id, properties.history_limit)
             while True:
                 message = await chatIter.next()
-                self.messageProcessing(message, False)
+                await self.messageProcessing(message, False)
         except StopAsyncIteration:
             pass
 
     @classmethod
-    def __chatFromMessage(cls, message: Message | QuestionSummary):
-        if cls.__chats.get(message.id.chat_id) is None:
-            cls.__log.error(f"Chat ({chat_id.value()}) is not init!")
-        return cls.__chats[message.id.chat_id]
+    def __chatFromMessage(cls, message_id: Message.Id):
+        if cls.__chats.get(message_id.chat_id) is None:
+            cls.__chats[message_id.chat_id] = Chat(message_id.chat_id, Dictionary(None, True, True))
+        return cls.__chats[message_id.chat_id]
 
     @classmethod
     def __isQuestion(cls, message: Message) -> bool:  # TODO: check separate sentences
@@ -126,7 +132,7 @@ class BotCore:
 
     @classmethod
     def __messageInterpretation(cls, message: Message | QuestionSummary) -> MessageInterpretation:
-        chat = cls.__chatFromMessage(message)
+        chat = cls.__chatFromMessage(message.id)
         if message.interpretation is None or message.interpretation.dict_ver != chat.dictionary.getVersion():
             message.interpretation = cls.__messageInterpretationService.toInterpretation(message.message,
                                                                                          chat.dictionary)
@@ -134,7 +140,7 @@ class BotCore:
 
     @classmethod
     def __updateDictionary(cls, message: Message):
-        chat = cls.__chatFromMessage(message)
+        chat = cls.__chatFromMessage(message.id)
         words = parseOnWords(message.message)
         for word in words:
             chat.dictionary.increaseWordCurrency(word)

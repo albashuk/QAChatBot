@@ -32,10 +32,13 @@ class MessageInterpretationService:
         
     def __dictionaryUse(self, msg: str, dictionary: Dictionary):
         words = self.__parseMsgOnWords(msg)
-        dict_vec = [0.0] * dictionary.size()
-        for word in words:
-            if dictionary.index(word) is not None:
-                dict_vec[dictionary.index(word)] += 1
+        if dictionary.size() == 0:
+            dict_vec = [1.0]
+        else:
+            dict_vec = [0.0] * dictionary.size()
+            for word in words:
+                if dictionary.index(word) is not None:
+                    dict_vec[dictionary.index(word)] += 1
         return torch.tensor([dict_vec]).to(self.__device)
 
     @staticmethod

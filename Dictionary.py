@@ -7,7 +7,7 @@ class Dictionary:
                  dictionary: set = None,
                  update_enabled: bool = False,
                  configure_default_common_words_usage: bool = False) -> None:
-        self.__dictionary = None if dictionary is None else {w: i for i, w in enumerate(dictionary)}
+        self.__dictionary = {} if dictionary is None else {w: i for i, w in enumerate(dictionary)}
         self.__dictionary_version = 0
         self.__update_enabled = update_enabled
         self.__words_currency = {}

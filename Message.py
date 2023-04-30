@@ -19,6 +19,9 @@ class Message:
         def __eq__(self, other: Message.Id):
             return self.chat_id == other.chat_id and self.message_id == other.message_id
 
+        def __str__(self):
+            return f"{self.chat_id.value()}/{self.message_id}"
+
     def __init__(self,
                  id: Id,
                  message: str,
@@ -39,8 +42,8 @@ class Message:
     def fromTelethonMessage(cls, tMessage: telethon.tl.custom.message.Message):
         reply_id = None \
             if tMessage.reply_to is None \
-            else Message.Id(tMessage.peer_id, tMessage.reply_to.reply_to_msg_id)
-        return Message(Message.Id(tMessage.peer_id, tMessage.id), tMessage.message, tMessage.from_id, reply_id)
+            else Message.Id(Chat.Id(tMessage.peer_id), tMessage.reply_to.reply_to_msg_id)
+        return Message(Message.Id(Chat.Id(tMessage.peer_id), tMessage.id), tMessage.message, tMessage.from_id, reply_id)
 
 
 

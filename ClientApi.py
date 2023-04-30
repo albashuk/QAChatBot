@@ -44,11 +44,11 @@ class ClientApi:
         return message.is_from_moderator
 
     @staticmethod
-    def buildRespond(answers, chat_id: Chat.Id) -> str:
+    def buildRespond(answers) -> str:
         respond = "Hello!\n\n" \
-                  + "I'll try to help you with you question. This could be a related answers:\n"
-        for i, answer in answers:
-            respond += f"{i + 1}) t.me/c/{chat_id.value()}/{answer[1]} - confidence: {answer[0]}\n"
+                  + "I'll try to help you with you question. This could be related answer(s):\n"
+        for i, answer in enumerate(answers):
+            respond += f"{i + 1}) t.me/c/{str(answer[1])} - confidence: {answer[0]}\n"
         respond += "\n"
         respond += "Do I help you to resolve your question?"
         return respond
