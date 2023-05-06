@@ -1,4 +1,4 @@
-from BERT import BERT
+from BertWrapper import BertWrapper
 from Dictionary import Dictionary
 
 import string
@@ -9,7 +9,7 @@ from parser import parseOnWords
 
 
 class MessageInterpretationService:
-    def __init__(self, device, bert: BERT) -> None:
+    def __init__(self, device, bert: BertWrapper) -> None:
         self.__cos = torch.nn.CosineSimilarity(dim=1, eps=1e-6)
         
         self.__device = device
@@ -51,7 +51,7 @@ class MessageInterpretationService:
 # debugging
 
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# bert = BERT(device)
+# bert = BertWrapper(device)
 # dictionary = Dictionary(None)
 # dictionary.set({"London", "Britain"})
 # messageSimilarity = MessageSimilarity(device, bert, dictionary, 0.5, 0.7)

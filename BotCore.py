@@ -2,7 +2,7 @@ import logging
 
 import torch
 
-from BERT import BERT
+from BertWrapper import BertWrapper
 from Chat import Chat
 from ClientApi import ClientApi
 from Dictionary import Dictionary
@@ -21,7 +21,7 @@ class BotCore:
 
     # modules
     __device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    __bert = BERT(__device)
+    __bert = BertWrapper(__device)
     __questionDetection = QuestionDetection(__device, __bert)
     __messageInterpretationService = MessageInterpretationService(__device, __bert)
 

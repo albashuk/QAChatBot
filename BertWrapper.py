@@ -3,7 +3,8 @@ from transformers import AutoModel, BertTokenizerFast
 
 import torch
 
-class BERT:
+
+class BertWrapper:
     def __init__(self, device) -> None:
         self.__device = device
         self.__tokenizer = BertTokenizerFast.from_pretrained(properties.bert.version)
@@ -12,13 +13,13 @@ class BERT:
         for param in self.__bert.parameters():
             param.requires_grad = False
 
-    def __call__(self, sentences):
-        sent_ids, mask = self.__sentToIds(sentences)
+    def __call__(self, text):
+        sent_ids, mask = self.__sentToIds(text)
         return self.__bert(sent_ids, mask)
 
-    def __sentToIds(self, sentences):
+    def __sentToIds(self, text):
         tokens = self.__tokenizer.batch_encode_plus(
-            sentences,
+            text,
             max_length = properties.bert.token_max_seq_len,
             pad_to_max_length=True,
             truncation=True,

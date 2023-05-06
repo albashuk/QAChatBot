@@ -1,5 +1,5 @@
 from properties import properties
-from BERT import BERT
+from BertWrapper import BertWrapper
 
 import pathlib 
 import datetime
@@ -27,7 +27,7 @@ class QuestionDetection():
 
         #####################################################################
 
-        def __init__(self, bert: BERT, path = None) -> None:
+        def __init__(self, bert: BertWrapper, path = None) -> None:
             super().__init__()
 
             self.__bert = bert
@@ -53,7 +53,7 @@ class QuestionDetection():
 
     #########################################################################
 
-    def __init__(self, device, bert: BERT, path = None) -> None:
+    def __init__(self, device, bert: BertWrapper, path = None) -> None:
         self.__device = device
         self.__module = self.__Module(bert, path).to(device)
 
@@ -65,8 +65,8 @@ class QuestionDetection():
     def train(self, train_dataset, valid_dataset, train_batch_size, valid_batch_size, criterion, learning_rate, epochs):
         self.__module.train()
 
-        train_loader = torch.utils.data.DataLoader(dataset = train_dataset, batch_size = train_batch_size)
-        valid_loader = torch.utils.data.DataLoader(dataset = valid_dataset, batch_size = valid_batch_size)
+        train_loader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=train_batch_size)
+        valid_loader = torch.utils.data.DataLoader(dataset=valid_dataset, batch_size=valid_batch_size)
         optimizer = torch.optim.Adam(self.__module.parameters(), lr = learning_rate)
 
         correctness_rate = []
@@ -128,7 +128,7 @@ class QuestionDetection():
 # print(torch.cuda.is_available())
 
 # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-# bert = BERT(device)
+# bert = BertWrapper(device)
 # QD = QuestionDetection(device, bert)
 #
 # from QuestionDetDataset import QuestionDetDataset
