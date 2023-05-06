@@ -6,6 +6,7 @@ import datetime
 import torch
 import torch.nn as nn
 
+
 class QuestionDetection():
     
     class __Module(nn.Module):
@@ -15,12 +16,12 @@ class QuestionDetection():
                 super().__init__()
 
                 self.__drop = nn.Dropout(properties.dropout_prob)
-                self.__ln = nn.Linear(properties.bert.out_size,2)
+                self.__ln = nn.Linear(properties.bert.out_size, 2)
                 self.__softmax = nn.Softmax()
 
             def forward(self, x):
                 x = self.__drop(x)
-                x = torch.tanh(self.__ln(x))
+                x = self.__ln(x)
                 x = self.__softmax(x)
 
                 return x
