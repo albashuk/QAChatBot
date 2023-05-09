@@ -16,13 +16,13 @@ class ClientApi:
         self.__client = client
         self.__is_bot = None
 
-    async def is_bot(self) -> bool:
+    async def isBot(self) -> bool:
         if self.__is_bot is None:
             self.__is_bot = await self.__client.is_bot()
         return self.__is_bot
 
     async def hasAccessToChatHistory(self, chat_id: Chat.Id) -> bool:
-        return not await self.is_bot()
+        return not await self.isBot()
 
     async def buildIter(self,
                         chat_id: Chat.Id,
@@ -36,12 +36,9 @@ class ClientApi:
             return ChatIter(self.__client, chat_id.peer_id, limit, start_message_id, downward)
 
     async def isFromModerator(self, message: Message) -> bool:
-        if message.is_from_moderator is None:
-            participant = await self.__client(GetParticipantRequest(channel=message.id.chat_id.value(),
-                                                                    participant=message.from_id))
-            message.is_from_moderator = isinstance(participant.participant,
-                                                   ChannelParticipantAdmin | ChannelParticipantCreator)
-        return message.is_from_moderator
+        participant = await self.__client(GetParticipantRequest(channel=message.id.chat_id.value(),
+                                                                participant=message.from_id))
+        return isinstance(participant.participant, ChannelParticipantAdmin | ChannelParticipantCreator)
 
     @staticmethod
     def buildRespond(answers) -> str:
@@ -59,7 +56,7 @@ class ClientApi:
 #     from TelegramConfig import api_id, api_hash
 #     client = await TelegramClient("not bot", api_id, api_hash).start()
 #     api = ClientApi(client)
-#     print(await api.is_bot())
+#     print(await api.isBot())
 #     from telethon.tl.types import PeerChannel
 #     i = await api.buildIter(Chat(PeerChannel(1935611955)), 100, 0, False)
 #     n = await i.next()

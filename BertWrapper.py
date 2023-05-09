@@ -13,18 +13,20 @@ class BertWrapper:
         for param in self.__bert.parameters():
             param.requires_grad = False
 
-    def __call__(self, text):
-        sent_ids, mask = self.__sentToIds(text)
+    def __call__(self, text, max_padding: bool = False):
+        sent_ids, mask = self.__sentToIds(text, max_padding)
         return self.__bert(sent_ids, mask)
 
-    def __sentToIds(self, text):
-        tokens = self.__tokenizer.batch_encode_plus(
-            text,
-            max_length = properties.bert.token_max_seq_len,
-            pad_to_max_length=True,
-            truncation=True,
-            return_token_type_ids=False 
-        )
+    def __sentToIds(self, texts, max_padding: bool):
+        args = {
+            'batch_text_or_text_pairs': texts,
+            'truncation': True,
+            'return_token_type_ids': False
+        }
+        if max_padding:
+            args['max_length'] = properties.bert.token_max_seq_len
+            args['padding'] = 'max_length'
+        tokens = self.__tokenizer.batch_encode_plus(**args)
 
         return torch.tensor(tokens['input_ids']).to(self.__device), torch.tensor(tokens['attention_mask']).to(self.__device)
 

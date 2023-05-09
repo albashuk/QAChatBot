@@ -17,7 +17,7 @@ class QuestionDetection():
 
                 self.__drop = nn.Dropout(properties.dropout_prob)
                 self.__ln = nn.Linear(properties.bert.out_size, 2)
-                self.__softmax = nn.Softmax()
+                self.__softmax = nn.Softmax(dim=1)
 
             def forward(self, x):
                 x = self.__drop(x)
@@ -37,7 +37,7 @@ class QuestionDetection():
                 self.load(path)
 
         def forward(self, sentences):
-            x = self.__bert(sentences)[1]
+            x = self.__bert(sentences, max_padding=True)[1]
             x = self.__moduleEnd(x)
 
             return x

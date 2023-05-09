@@ -32,8 +32,8 @@ class BotCore:
         self.__clientApi = clientApi
 
     async def messageProcessing(self, message: Message, with_answering: bool = True):
-        chat = self.__chatFromMessage(message.id)
-        user_type = "moderator" if await self.__clientApi.isFromModerator(message) else "user"
+        chat = self.__chatById(message.id.chat_id)
+        user_type = "moderator" if await self.__isFromModerator(message) else "user"
         chat.message_count[user_type] += 1
         while len(chat.questions_queue[user_type]) > 0 \
                 and not chat.questions_queue[user_type][0].waitingForAnswer(chat.message_count[user_type], user_type):
@@ -78,7 +78,7 @@ class BotCore:
                 self.__answerChecking(question, message, self.__messageWeight(user_type))
 
     async def acceptGeneratedAnswer(self, answer_id: Message.Id, question_id: Message.Id):
-        chat = self.__chatFromMessage(answer_id)
+        chat = self.__chatById(answer_id.chat_id)
         question = chat.questions[question_id]
         question.answer_id = answer_id
         question.answer_confidence = 1
@@ -101,11 +101,16 @@ class BotCore:
         except StopAsyncIteration:
             pass
 
+    async def __isFromModerator(self, message: Message) -> bool:
+        if message.is_from_moderator is None:
+            message.is_from_moderator = await self.__clientApi.isFromModerator(message)
+        return message.is_from_moderator
+
     @classmethod
-    def __chatFromMessage(cls, message_id: Message.Id):
-        if cls.__chats.get(message_id.chat_id) is None:
-            cls.__chats[message_id.chat_id] = Chat(message_id.chat_id, Dictionary(set(), True, True))
-        return cls.__chats[message_id.chat_id]
+    def __chatById(cls, chat_id: Chat.Id):
+        if cls.__chats.get(chat_id) is None:
+            cls.__chats[chat_id] = Chat(chat_id, Dictionary(set(), True, True))
+        return cls.__chats[chat_id]
 
     @classmethod
     def __isQuestion(cls, message: Message) -> bool:  # TODO: check separate sentences
@@ -137,7 +142,7 @@ class BotCore:
 
     @classmethod
     def __messageInterpretation(cls, message: Message | QuestionSummary) -> MessageInterpretation:
-        chat = cls.__chatFromMessage(message.id)
+        chat = cls.__chatById(message.id.chat_id)
         if message.interpretation is None or message.interpretation.dict_ver != chat.dictionary.getVersion():
             message.interpretation = cls.__messageInterpretationService.toInterpretation(message.message,
                                                                                          chat.dictionary)
@@ -145,7 +150,7 @@ class BotCore:
 
     @classmethod
     def __updateDictionary(cls, message: Message):
-        chat = cls.__chatFromMessage(message.id)
+        chat = cls.__chatById(message.id.chat_id)
         words = parseOnWords(message.message)
         for word in words:
             chat.dictionary.increaseWordCurrency(word)
