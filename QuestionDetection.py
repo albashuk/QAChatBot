@@ -56,7 +56,7 @@ class QuestionDetection():
 
     def isQuestion(self, sentence) -> bool:
         self.__module.eval()
-        has_question_mark = 1.0 if "?" in sentence else 0.0
+        has_question_mark = 1.0 if "?" in sentence else -1.0
         question_prob = self.__module([sentence])[0]
         return question_prob[0].item() <= question_prob[1].item() + has_question_mark * properties.question_mark_weight
 
