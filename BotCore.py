@@ -11,7 +11,7 @@ from MessageInterpretation import MessageInterpretation
 from MessageInterpretationService import MessageInterpretationService
 from QuestionDetection import QuestionDetection
 from QuestionSummary import QuestionSummary
-from parser import parseOnWords
+from parser import parseOnWords, parseOnSentences
 from properties import properties
 
 
@@ -87,7 +87,7 @@ class BotCore:
         if self.__chats.get(chat_id) is not None:
             self.__log.warning(f"Chat ({chat_id.value()}) is already init")
             return
-        self.__chats[chat_id] = Chat(chat_id, Dictionary(None, True, True))
+        self.__chats[chat_id] = Chat(chat_id, Dictionary(set(), True, True))
 
         if not self.__clientApi.hasAccessToChatHistory(chat_id):
             self.__log.warning(f"Client hasn't access to chat ({chat_id.value()}) history")
@@ -104,27 +104,32 @@ class BotCore:
     @classmethod
     def __chatFromMessage(cls, message_id: Message.Id):
         if cls.__chats.get(message_id.chat_id) is None:
-            cls.__chats[message_id.chat_id] = Chat(message_id.chat_id, Dictionary(None, True, True))
+            cls.__chats[message_id.chat_id] = Chat(message_id.chat_id, Dictionary(set(), True, True))
         return cls.__chats[message_id.chat_id]
 
     @classmethod
     def __isQuestion(cls, message: Message) -> bool:  # TODO: check separate sentences
         if message.is_question is None:
-            message.is_question = cls.__questionDetection.isQuestion(message.message)
+            message.is_question = False
+            sentences = parseOnSentences(message.message)
+            for sentence in sentences:
+                message.is_question = cls.__questionDetection.isQuestion(sentence)
+                if message.is_question is True:
+                    break
         return message.is_question
 
     @classmethod
     def __questionSimilarity(cls, question1: QuestionSummary, question2: QuestionSummary):
         return cls.__messageInterpretationService.similarity(cls.__messageInterpretation(question1),
                                                              cls.__messageInterpretation(question2),
-                                                             0.7)  # TODO: config coefficient
+                                                             properties.question_similarity_bert_weight)
 
     @classmethod
-    def __answerChecking(cls, question: QuestionSummary, answer: Message, weight: float = 0):
+    def __answerChecking(cls, question: QuestionSummary, answer: Message, weight: float = 0.0):
         similarity = cls.__messageInterpretationService.similarity(cls.__messageInterpretation(question),
                                                                    cls.__messageInterpretation(answer),
-                                                                   0.4)  # TODO: config coefficient
-        answer_confidence = similarity * weight  # TODO: improve formula
+                                                                   properties.answer_similarity_bert_weight)
+        answer_confidence = cls.__answerConfidence(similarity, weight)
         if similarity >= properties.qa_similarity_threshold and answer_confidence >= properties.answer_threshold:
             if question.answer_id is None or question.answer_confidence < answer_confidence:
                 question.answer_id = answer.id
@@ -154,6 +159,10 @@ class BotCore:
             return properties.user_weight[user_type] * properties.reply_weight
         else:
             return properties.user_weight[user_type]
+
+    @staticmethod
+    def __answerConfidence(similarity: float, weight: float) -> float:
+        return 0 if weight == 0.0 else 1.0 - (1.0 - similarity) * (1.0 / weight)
 
 
 

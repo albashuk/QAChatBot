@@ -20,7 +20,12 @@ class properties:
     user_weight = {"user": 0.5, "moderator": 1.0}
     reply_weight = 2.0
 
+    question_mark_weight = 0.5
+
+    question_similarity_bert_weight = 0.7
     question_similarity_threshold = 0.8
+
+    answer_similarity_bert_weight = 0.4
     qa_similarity_threshold = 0.7
     answer_threshold = 0.8
 

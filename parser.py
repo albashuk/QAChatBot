@@ -1,4 +1,6 @@
 import string
+import nltk
+nltk.download('punkt')
 
 
 def __removeVerbEnding(word: str) -> str:
@@ -23,9 +25,21 @@ def parseOnWords(text: str) -> list:
             if len(__removeVerbEnding(word.strip(string.punctuation))) > 0]  # TODO: remove special characters
 
 
+def parseOnSentences(text: str) -> list:
+    return nltk.tokenize.sent_tokenize(text)
+
+
 # debugging
 
 # text = "Use this link https://stackoverflow.com/questions/42602004/what-does-b-for-a-in-x-for-b-in-a-if-not-b-k-mean"
 # print(parseOnWords(text))
 # print(text.split())
 # print([word.strip(string.punctuation) for word in text.split()])
+
+# text = 'Some sentence. Mr.Holmes... This is a new sentence! And is this another one? Hi!'
+# print(parseOnWords(text))
+# print(parseOnSentences(text))
+# text = 'The U.S. Drug Enforcement Administration (DEA) says hello. And have a nice day.'
+# print(parseOnWords(text))
+# print(parseOnSentences(text))
+
