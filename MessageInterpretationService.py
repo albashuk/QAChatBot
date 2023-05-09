@@ -52,7 +52,7 @@ class MessageInterpretationService:
     def __dictCosSim(self, dict1, dict2):
         if len(dict1) == 0 or len(dict2) == 0:
             return 0.5 if len(dict1) == 0 and len(dict2) == 0 else 0.0
-        return len(set(dict1).intersection(dict2)) / math.sqrt(len(dict) * len(dict2))
+        return len(set(dict1).intersection(dict2)) / math.sqrt(len(dict1) * len(dict2))
 
     @staticmethod
     def __parseMsgOnWords(msg: str):

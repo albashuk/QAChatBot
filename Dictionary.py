@@ -7,7 +7,7 @@ class Dictionary:
                  dictionary: set = None,
                  update_enabled: bool = False,
                  configure_default_common_words_usage: bool = False) -> None:
-        self.__dictionary = {} if dictionary is None else {w: i for i, w in enumerate(dictionary)}
+        self.__dictionary = {} if dictionary is None else {w.lower(): i for i, w in enumerate(dictionary)}
         self.__dictionary_version = 0
         self.__update_enabled = update_enabled
         self.__words_currency = {}
@@ -26,12 +26,12 @@ class Dictionary:
 
     def setFromFile(self, path, update_enabled: bool = False):
         dictionary = set(parseOnWords(open(path).read()))
-        self.__dictionary = {w: i for i, w in enumerate(dictionary)}
+        self.__dictionary = {w.lower(): i for i, w in enumerate(dictionary)}
         self.__update_enabled = update_enabled
         self.__dictionary_version += 1
 
     def set(self, dictionary: set, update_enabled: bool = False):
-        self.__dictionary = {w: i for i, w in enumerate(dictionary)}
+        self.__dictionary = {w.lower(): i for i, w in enumerate(dictionary)}
         self.__update_enabled = update_enabled
         self.__dictionary_version += 1
 
