@@ -49,14 +49,14 @@ async def message_processing(event):
 
 @bot.on(events.CallbackQuery(data=b'Yes'))
 async def yes(event):
-    await event.respond(message="You're welcome!", reply_to=event.message.id)
+    await event.respond(message="You're welcome!", reply_to=event.message_id)
     message = Message.fromTelethonMessage(event.get_message())
     await botCore.acceptGeneratedAnswer(message.id, message.reply_id)
 
 
 @bot.on(events.CallbackQuery(data=b'No'))
 async def no(event):
-    await event.respond(message="MODERATOR!!!", reply_to=event.message.id)
+    await event.respond(message="MODERATOR!!!", reply_to=event.message_id)
 
 
 def main():
