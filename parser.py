@@ -1,15 +1,18 @@
 import string
 import nltk
+
 nltk.download('punkt')
+stemmer = nltk.PorterStemmer()
 
 
-def __removeVerbEnding(word: str) -> str:
+def wordToStem(word: str) -> str:
     if len(word) >= 4 and word[-3] == "'":
-        return word[:-3]
+        word = word[:-3]
     elif len(word) >= 3 and word[-2] == "'":
-        return word[:-2]
+        word = word[:-2]
     else:
-        return word
+        word = word
+    return stemmer.stem(word)
 
 
 def __isLink(word: str) -> bool:
@@ -18,11 +21,11 @@ def __isLink(word: str) -> bool:
 
 
 def parseOnWords(text: str) -> list:
-    return [__removeVerbEnding(word.strip(string.punctuation))
+    return [wordToStem(word.strip(string.punctuation))
             for word_ in text.split()
             if not __isLink(word_)
             for word in word_.split("/")
-            if len(__removeVerbEnding(word.strip(string.punctuation))) > 0]  # TODO: remove special characters
+            if len(wordToStem(word.strip(string.punctuation))) > 0]  # TODO: remove special characters
 
 
 def parseOnSentences(text: str) -> list:

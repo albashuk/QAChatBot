@@ -50,13 +50,15 @@ async def message_processing(event):
 @bot.on(events.CallbackQuery(data=b'Yes'))
 async def yes(event):
     await event.respond(message="You're welcome!", reply_to=event.message_id)
-    message = Message.fromTelethonMessage(event.get_message())
+    tMessage = await event.get_message()
+    message = Message.fromTelethonMessage(tMessage)
     await botCore.acceptGeneratedAnswer(message.id, message.reply_id)
 
 
 @bot.on(events.CallbackQuery(data=b'No'))
 async def no(event):
-    await event.respond(message="MODERATOR!!!", reply_to=event.message_id)
+    tMessage = await event.get_message()
+    await event.respond(message="MODERATOR!!!", reply_to=tMessage.reply_to.reply_to_msg_id)
 
 
 def main():

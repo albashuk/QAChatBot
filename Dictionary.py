@@ -1,4 +1,4 @@
-from parser import parseOnWords
+from parser import parseOnWords, wordToStem
 from properties import properties
 
 
@@ -7,7 +7,7 @@ class Dictionary:
                  dictionary: set = None,
                  update_enabled: bool = False,
                  configure_default_common_words_usage: bool = False) -> None:
-        self.__dictionary = {} if dictionary is None else {w.lower(): i for i, w in enumerate(dictionary)}
+        self.__dictionary = {} if dictionary is None else {wordToStem(w): i for i, w in enumerate(dictionary)}
         self.__dictionary_version = 0
         self.__update_enabled = update_enabled
         self.__words_currency = {}
@@ -42,14 +42,14 @@ class Dictionary:
         return len(self.__dictionary)
 
     def index(self, word: str) -> bool:
-        word = word.lower()
+        word = wordToStem(word)
         return self.__dictionary.get(word)
 
     def setUpdateMode(self, update_enabled: bool):
         self.__update_enabled = update_enabled
 
     def increaseWordCurrency(self, word: str):
-        word = word.lower()
+        word = wordToStem(word)
         if self.__update_enabled:
             if self.__words_currency.get(word) is None:
                 self.__words_currency[word] = 0
@@ -89,7 +89,7 @@ class Dictionary:
 
         words = parseOnWords(open(path, "r", encoding="utf-8").read())
         for word in words:
-            word = word.lower()
+            word = wordToStem(word)
             if self.__common_words_usage.get(word) is None:
                 self.__common_words_usage[word] = 0
             self.__common_words_usage[word] += 1

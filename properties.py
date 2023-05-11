@@ -25,7 +25,7 @@ class properties:
     question_similarity_bert_weight = 0.7
     question_similarity_threshold = 0.8
 
-    answer_similarity_bert_weight = 0.4
+    answer_similarity_bert_weight = 0.5
     qa_similarity_threshold = 0.7
     answer_threshold = 0.8
 
