@@ -1,4 +1,4 @@
-from properties import *
+from properties import properties
 from transformers import AutoModel, BertTokenizerFast
 
 import torch

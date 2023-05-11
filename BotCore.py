@@ -113,7 +113,7 @@ class BotCore:
         return cls.__chats[chat_id]
 
     @classmethod
-    def __isQuestion(cls, message: Message) -> bool:  # TODO: check separate sentences
+    def __isQuestion(cls, message: Message) -> bool:
         if message.is_question is None:
             message.is_question = False
             sentences = parseOnSentences(message.message)
